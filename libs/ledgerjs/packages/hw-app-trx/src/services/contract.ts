@@ -1,14 +1,14 @@
 import bs58 from "bs58check";
 import axios from "axios";
-import { LedgerTrxTransactionResolution, LoadConfig } from "./types";
-import TronProtobuf from '../protobuf/smart_contract_pb';
+import { LedgerTrxTransactionResolution, LoadConfig, ResolutionConfig } from "./types";
+import TronProtobuf from "../protobuf/smart_contract_pb";
 const { Transaction, TriggerSmartContract } = TronProtobuf;
 
 type ContractMethod = {
   payload: string;
   signature: string;
   plugin: string;
-}
+};
 /**
  * Resolve resolution of transction for clear sign. The result is `null` if transaction is not TriggerSmartContract or no resolution found.
  * @param rawDataHex raw_data_hex in transaction
@@ -17,7 +17,11 @@ type ContractMethod = {
  * @param loadConfig.extraPlugins plugin info to be merged with plugin info from service. Useful for debug.
  * @returns resolution for clear sign
  */
-export async function resolveTransaction(rawDataHex: string, loadConfig: LoadConfig = {}): Promise<LedgerTrxTransactionResolution | null> {
+export async function resolveTransaction(
+  rawDataHex: string,
+  loadConfig: LoadConfig = {},
+  resolutionConfig: ResolutionConfig,
+): Promise<LedgerTrxTransactionResolution | null> {
   const contractInfo = deserializeContractInfoFromHex(rawDataHex);
   if (!contractInfo) {
     return null;
@@ -25,16 +29,23 @@ export async function resolveTransaction(rawDataHex: string, loadConfig: LoadCon
   const resolution: LedgerTrxTransactionResolution = { externalPlugin: [] };
 
   const { contractAddress, selector } = contractInfo;
-  const contractMethodInfos = await getPluginInfoForContractMethod(contractAddress, selector, loadConfig);
-  if (contractMethodInfos) {
-    const { payload, signature, plugin } = contractMethodInfos;
-    if (plugin) {
-      console.log(`[hw-app-trx]: found plugin (${plugin}) for select: ${selector}`);
-      resolution.externalPlugin.push({ payload, signature })
+  if (resolutionConfig.externalPlugins) {
+    const contractMethodInfos = await getPluginInfoForContractMethod(
+      contractAddress,
+      selector,
+      loadConfig,
+    );
+    if (contractMethodInfos) {
+      const { payload, signature, plugin } = contractMethodInfos;
+      if (plugin) {
+        console.log("tron", `found plugin (${plugin}) for selector: ${selector}`);
+        resolution.externalPlugin.push({ payload, signature });
+      }
+    } else {
+      console.log("tron", "no infos for selector " + selector);
     }
-  } else {
-    console.log("[hw-app-trx]: no infos for selector " + selector);
   }
+
   return resolution;
 }
 

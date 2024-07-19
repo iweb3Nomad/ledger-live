@@ -147,16 +147,26 @@ export default class Trx {
       return this._signTransaction(path, rawTxHex, tokenSignatures);
     }
     if (resolution === undefined) {
-      console.log(
-        `[hw-app-trx]: signTransaction(path, rawTxHex, tokenSignatures, resolution):no resolution provided and use default service to get plugin information.`,
+      console.warn(
+        "hw-app-trx: signTransaction(path, rawTxHex, tokenSignatures, resolution): " +
+          "please provide the 'resolution' parameter. " +
+          "See https://github.com/LedgerHQ/ledgerjs/blob/master/packages/hw-app-trx/README.md " +
+          "– the previous signature is deprecated and providing the 3rd 'resolution' parameter explicitly will become mandatory so you have the control on the resolution and the fallback mecanism (e.g. fallback to blind signing or not)." +
+          "// Possible solution:\n" +
+          " + import { ledgerService } from '@ledgerhq/hw-app-trx';\n" +
+          " + const resolution = await ledgerService.resolveTransaction(rawTxHex);",
       );
 
-      resolution = await ledgerService.resolveTransaction(rawTxHex, this.loadConfig).catch(e => {
-        console.warn(
-          "an error occurred in resolveTransaction => fallback to blind signing: " + String(e),
-        );
-        return null;
-      });
+      resolution = await ledgerService
+        .resolveTransaction(rawTxHex, this.loadConfig, {
+          externalPlugins: true,
+        })
+        .catch(e => {
+          console.warn(
+            "an error occurred in resolveTransaction => fallback to blind signing: " + String(e),
+          );
+          return null;
+        });
     }
     if (!resolution || resolution.externalPlugin.length === 0) {
       console.warn(
@@ -323,26 +333,28 @@ export default class Trx {
    * sign a Tron transaction with a given BIP 32 using clear signing. This method will use default plugin service to resolve the plugin for transaction.
    * @param path a path in BIP 32 format
    * @param rawTxHex a raw transaction hex string
-   * @param resolutionConfig: Reserved parameters, not used yet. Configuration about what should be clear signed in the transaction
-   * @param throwOnError: Reserved parameters, not used yet. optional parameter to determine if a failing resolution of the transaction should throw an error or not
+   * @param resolutionConfig: configuration about what should be clear signed in the transaction
+   * @param throwOnError: optional parameter to determine if a failing resolution of the transaction should throw an error or not
    * @return a signature as hex string
    * @example
-   * const signature = await tron.clearSignTransaction("44'/195'/0'/0/0", "0a0267a42208cb83283f5927a5e040c8badeb489325ab001081f12a9010a31747970652e676f6f676c65617069732e636f6d2f70726f746f636f6c2e54726967676572536d617274436f6e747261637412740a1541e2ae49db6a70b9b4757d2137a43b69b24a4457801215410e1bce983f78f8913002c3f7e52daf78de6da2cb2244a9059cbb000000000000000000000000573708726db88a32c1b9c828fef508577cfb8483000000000000000000000000000000000000000000000000000000000000000a286470a6f8dab48932900180ade204");
+   * const signature = await tron.clearSignTransaction("44'/195'/0'/0/0", "0a0267a42208cb83283f5927a5e040c8badeb489325ab001081f12a9010a31747970652e676f6f676c65617069732e636f6d2f70726f746f636f6c2e54726967676572536d617274436f6e747261637412740a1541e2ae49db6a70b9b4757d2137a43b69b24a4457801215410e1bce983f78f8913002c3f7e52daf78de6da2cb2244a9059cbb000000000000000000000000573708726db88a32c1b9c828fef508577cfb8483000000000000000000000000000000000000000000000000000000000000000a286470a6f8dab48932900180ade204",{externalPlugins: true});
    */
   async clearSignTransaction(
     path: string,
     rawTxHex: string,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    resolutionConfig: ResolutionConfig = {},
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    resolutionConfig: ResolutionConfig,
     throwOnError: boolean = false,
   ) {
     const resolution = await ledgerService
-      .resolveTransaction(rawTxHex, this.loadConfig)
+      .resolveTransaction(rawTxHex, this.loadConfig, resolutionConfig)
       .catch(e => {
         console.warn(
           "an error occurred in resolveTransaction => fallback to blind signing: " + String(e),
         );
+
+        if (throwOnError) {
+          throw e;
+        }
         return null;
       });
 
