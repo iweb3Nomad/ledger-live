@@ -58,8 +58,11 @@ export async function resolveTransaction(
  * @param loadConfig.extraPlugins plugin info to be merged with plugin info from service. Useful for debug.
  * @returns plugin info with payload and signature if exists.
  */
-export async function getPluginInfoForContractMethod(contractAddress: string, selector: string, userLoadConfig: LoadConfig = {}): Promise<ContractMethod | undefined> {
-
+export async function getPluginInfoForContractMethod(
+  contractAddress: string,
+  selector: string,
+  userLoadConfig: LoadConfig = {},
+): Promise<ContractMethod | undefined> {
   const { pluginBaseURL, extraPlugins } = {
     pluginBaseURL: "https://cdn.live.ledger.com",
     extraPlugins: null,
@@ -70,11 +73,13 @@ export async function getPluginInfoForContractMethod(contractAddress: string, se
 
   if (pluginBaseURL) {
     const url = `${pluginBaseURL}/plugins/tron.json`;
-    data = await axios.get(url).then(r => r.data as any)
+    data = await axios
+      .get(url)
+      .then(r => r.data as any)
       .catch(e => {
         console.error(`[hw-app-trx]: could not fetch plugins from ${url}: ${String(e)}`);
         return undefined;
-      })
+      });
   }
   if (extraPlugins) {
     data = { ...data, ...extraPlugins };
@@ -84,14 +89,14 @@ export async function getPluginInfoForContractMethod(contractAddress: string, se
   const lcSelector = selector.toLowerCase();
 
   const contractSelectors = data[contractAddress];
-  if (!!contractSelectors) {
+  if (contractSelectors) {
     const plugin = contractSelectors[lcSelector];
-    if (!!plugin) {
+    if (plugin) {
       return {
-        payload: plugin['serialized_data'],
-        signature: plugin['signature'],
-        plugin: plugin['plugin'],
-      }
+        payload: plugin["serialized_data"],
+        signature: plugin["signature"],
+        plugin: plugin["plugin"],
+      };
     }
   }
 }
@@ -99,7 +104,7 @@ export async function getPluginInfoForContractMethod(contractAddress: string, se
 export type TriggerSmartContractInfo = {
   contractAddress: string;
   selector: string;
-}
+};
 const TriggerSmartContractType = 31;
 
 /**
@@ -107,22 +112,29 @@ const TriggerSmartContractType = 31;
  * @param rawTx raw data in hex
  * @returns contractAddress and function selector
  */
-export function deserializeContractInfoFromHex(rawTx: string): TriggerSmartContractInfo | undefined {
+export function deserializeContractInfoFromHex(
+  rawTx: string,
+): TriggerSmartContractInfo | undefined {
   try {
-    const transaction = Transaction.raw.deserializeBinary(Uint8Array.from(Buffer.from(rawTx, 'hex')));
+    const transaction = Transaction.raw.deserializeBinary(
+      Uint8Array.from(Buffer.from(rawTx, "hex")),
+    );
     const contract = transaction.getContractList()?.[0];
-    if (!contract) { return; }
+    if (!contract) {
+      return;
+    }
     const type = contract.getType();
-    if (type !== TriggerSmartContractType) { return; }
+    if (type !== TriggerSmartContractType) {
+      return;
+    }
 
     const value = contract.getParameter().getValue();
     const smartContract = TriggerSmartContract.deserializeBinary(value);
     const contractAddress = bs58.encode(smartContract.getContractAddress());
-    const data = Buffer.from(smartContract.getData()).toString('hex');
-    const selector = '0x' + data.slice(0, 8).toLowerCase();
+    const data = Buffer.from(smartContract.getData()).toString("hex");
+    const selector = "0x" + data.slice(0, 8).toLowerCase();
     return { contractAddress, selector };
   } catch (e) {
     console.error(`[hw-app-trx]: failed to deserialize transaction from hex: ${String(e)}`);
   }
 }
-
