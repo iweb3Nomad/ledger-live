@@ -1,8 +1,8 @@
 import bs58 from "bs58check";
 import axios from "axios";
 import { LedgerTrxTransactionResolution, LoadConfig, ResolutionConfig } from "./types";
-import TronProtobuf from "../protobuf/smart_contract_pb";
-const { Transaction, TriggerSmartContract } = TronProtobuf;
+import { TriggerSmartContract } from "../protobuf/smart_contract_pb";
+import { Transaction } from "../protobuf/Tron_pb";
 
 type ContractMethod = {
   payload: string;
@@ -116,7 +116,7 @@ export function deserializeContractInfoFromHex(
   rawTx: string,
 ): TriggerSmartContractInfo | undefined {
   try {
-    const transaction = Transaction.raw.deserializeBinary(
+    const transaction = (Transaction.raw as any).deserializeBinary(
       Uint8Array.from(Buffer.from(rawTx, "hex")),
     );
     const contract = transaction.getContractList()?.[0];

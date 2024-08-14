@@ -39,6 +39,7 @@ const SIGN = 0x04;
 const SIGN_HASH = 0x05;
 const CLEAR_SIGN = 0xc4;
 const SIGN_MESSAGE = 0x08;
+const INS_SIGN_PERSONAL_MESSAGE_FULL_DISPLAY = 0xc8;
 const ECDH_SECRET = 0x0a;
 const VERSION = 0x06;
 const CHUNK_SIZE = 250;
@@ -69,6 +70,7 @@ export default class Trx {
         "signTransaction",
         "signTransactionHash",
         "signPersonalMessage",
+        "signPersonalMessageFullDisplay",
         "signTIP712HashedMessage",
         "getAppConfiguration",
       ],
@@ -456,8 +458,67 @@ export default class Trx {
 
     let response;
     return foreach(toSend, (data, i) => {
+      console.log("======toSend======");
+      console.log(toSend);
+      console.log("======data======");
+      console.log(data);
       return this.transport
         .send(CLA, SIGN_MESSAGE, i === 0 ? 0x00 : 0x80, 0x00, data)
+        .then(apduResponse => {
+          response = apduResponse;
+        });
+    }).then(() => {
+      return response.slice(0, 65).toString("hex");
+    });
+  }
+
+  /**
+   * sign a Tron Message with a given BIP 32 path
+   *
+   * @param path a path in BIP 32 format
+   * @param message hex string to sign
+   * @return a signature as hex string
+   * @example
+   * const signature = await tron.signPersonalMessageFullDisplay("44'/195'/0'/0/0", "43727970746f436861696e2d54726f6e5352204c6564676572205472616e73616374696f6e73205465737473");
+   */
+  signPersonalMessageFullDisplay(path: string, messageHex: string): Promise<string> {
+    const paths = splitPath(path);
+    const message = Buffer.from(messageHex, "hex");
+    let offset = 0;
+    const toSend: Buffer[] = [];
+    const size = message.length.toString(16);
+    const sizePack = "00000000".substr(size.length) + size;
+    const packed = Buffer.concat([Buffer.from(sizePack, "hex"), message]);
+
+    while (offset < packed.length) {
+      // Use small buffer to be compatible with old and new protocol
+      const maxChunkSize = offset === 0 ? CHUNK_SIZE - 1 - paths.length * 4 : CHUNK_SIZE;
+      const chunkSize =
+        offset + maxChunkSize > packed.length ? packed.length - offset : maxChunkSize;
+      const buffer = Buffer.alloc(offset === 0 ? 1 + paths.length * 4 + chunkSize : chunkSize);
+
+      if (offset === 0) {
+        buffer[0] = paths.length;
+        paths.forEach((element, index) => {
+          buffer.writeUInt32BE(element, 1 + 4 * index);
+        });
+        packed.copy(buffer, 1 + 4 * paths.length, offset, offset + chunkSize);
+      } else {
+        packed.copy(buffer, 0, offset, offset + chunkSize);
+      }
+
+      toSend.push(buffer);
+      offset += chunkSize;
+    }
+
+    let response;
+    return foreach(toSend, (data, i) => {
+      console.log("======toSend======");
+      console.log(toSend);
+      console.log("======data======");
+      console.log(data);
+      return this.transport
+        .send(CLA, INS_SIGN_PERSONAL_MESSAGE_FULL_DISPLAY, i === 0 ? 0x00 : 0x80, 0x00, data)
         .then(apduResponse => {
           response = apduResponse;
         });
