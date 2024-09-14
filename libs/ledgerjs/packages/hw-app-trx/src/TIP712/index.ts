@@ -288,7 +288,7 @@ async function sendFilteringInfo(
           if (payload) {
             enum PROVIDE_TOKEN_INFOS_APDU_FIELDS {
               CLA = 0xe0,
-              INS = 0x0a,
+              INS = 0xca,
               P1 = 0x00,
               P2 = 0x00,
             }
@@ -315,7 +315,7 @@ async function sendFilteringInfo(
         const payload = await byContractAddressAndChainId(token, chainId, erc20SignaturesBlob);
 
         if (payload) {
-          await transport.send(0xe0, 0x0a, 0x00, 0x00, payload.data);
+          await transport.send(0xe0, 0xca, 0x00, 0x00, payload.data);
           coinRefsTokensMap[255].deviceTokenIndex = 255;
         }
       }
@@ -478,11 +478,7 @@ export const signTIP712Message = async (
   typedMessage: TIP712Message,
   fullImplem = false,
   loadConfig: LoadConfig,
-): Promise<{
-  v: number;
-  s: string;
-  r: string;
-}> => {
+): Promise<string> => {
   enum APDU_FIELDS {
     CLA = 0xe0,
     INS = 0x0c,
@@ -595,14 +591,6 @@ export const signTIP712Message = async (
       signatureBuffer,
     )
     .then(response => {
-      const v = response[0];
-      const r = response.subarray(1, 1 + 32).toString("hex");
-      const s = response.subarray(1 + 32, 1 + 32 + 32).toString("hex");
-
-      return {
-        v,
-        r,
-        s,
-      };
+      return response.slice(0, 65).toString("hex");
     });
 };
