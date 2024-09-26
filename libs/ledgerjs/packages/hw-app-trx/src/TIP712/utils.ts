@@ -200,7 +200,7 @@ export const getFiltersForMessage = async (
         throw new Error("Fallback to static file");
       }
 
-      return filters;
+      return undefined;
     }
     // Fallback to catch
     throw new Error("Fallback to static file");
