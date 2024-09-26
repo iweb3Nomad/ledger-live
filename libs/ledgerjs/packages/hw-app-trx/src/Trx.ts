@@ -533,7 +533,7 @@ export default class Trx {
   /**
    * Sign a typed data. The host computes the domain separator and hashStruct(message)
    * @example
-     const signature = await tronApp.signTIP712HashedMessage("44'/195'/0'/0/0",Buffer.from( "0101010101010101010101010101010101010101010101010101010101010101").toString("hex"), Buffer.from("0202020202020202020202020202020202020202020202020202020202020202").toString("hex"));
+     const signature = await tronApp.signTIP712Message("44'/195'/0'/0/0", message);
    */
   signTIP712Message(
     path: string,
