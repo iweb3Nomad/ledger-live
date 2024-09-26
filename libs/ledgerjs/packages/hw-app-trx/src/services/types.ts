@@ -30,6 +30,8 @@ export type LoadConfig = {
    *
    */
   extraPlugins?: Record<string, Record<string, PluginInfo>> | null;
+  cryptoassetsBaseURL?: string | null;
+  calServiceURL?: string | null;
 };
 
 /**

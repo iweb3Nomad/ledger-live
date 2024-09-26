@@ -4,13 +4,13 @@ import type {
   TIP712Message,
   TIP712MessageTypes,
   TIP712MessageTypesEntry,
-  LoadConfig,
   StructImplemData,
   StructDefData,
   FilteringInfoContractName,
   FilteringInfoShowField,
   MessageFilters,
 } from "./types";
+import { LoadConfig } from "../services/types";
 import { getLoadConfig } from "../services/loadConfig";
 import {
   getFiltersForMessage,

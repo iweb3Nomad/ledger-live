@@ -1,6 +1,6 @@
 import { resolveTransaction } from "./contract";
 import { getLoadConfig } from "./loadConfig";
-import { LoadConfig } from "./../TIP712/types";
+import { LoadConfig } from "./types";
 import axios from "axios";
 import { log } from "@ledgerhq/logs";
 import { signatures as signaturesByChainId } from "@ledgerhq/cryptoassets/data/evm/index";

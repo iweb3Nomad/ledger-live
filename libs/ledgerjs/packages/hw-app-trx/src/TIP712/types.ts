@@ -23,20 +23,6 @@ export type TIP712Message = {
   message: Record<string, unknown>;
 };
 
-export type LoadConfig = {
-  // Backend service responsible for signed NFT APDUS
-  nftExplorerBaseURL?: string | null;
-  // example of payload https://cdn.live.ledger.com/plugins/ethereum/1.json
-  // fetch against an api (base url is an api that hosts /plugins/ethereum/${chainId}.json )
-  // set to null will disable it
-  pluginBaseURL?: string | null;
-  // provide manually some extra plugins to add for the resolution (e.g. for dev purpose)
-  // object will be merged with the returned value of the Ledger cdn payload
-  extraPlugins?: any | null;
-  cryptoassetsBaseURL?: string | null;
-  calServiceURL?: string | null;
-};
-
 export type FieldFiltersV1 = {
   label: string;
   path: string;
